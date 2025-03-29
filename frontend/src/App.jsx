@@ -16,6 +16,7 @@ import Applicants from './components/admin/Applicants'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import Alerts from "./components/Alert"
 // import Dashboard from '../Resume-Builder/src/dashboard/index'
+import AluminiConnect from "../src/components/AluminiConnect"
 
 
 const appRouter = createBrowserRouter([
@@ -52,6 +53,10 @@ const appRouter = createBrowserRouter([
   {
     path: "/alerts",
     element: <Alerts />
+  },
+  {
+    path: "/alumini",
+    element: <AluminiConnect />
   },
   {
     path: "/jobs",
