@@ -1,6 +1,7 @@
 import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
 import { sendEmail } from "./sendEmail.controllers.js";
+import {Interview} from "../models/Interview.models.js"
 
 export const applyJob = async (req, res) => {
     try {
@@ -170,12 +171,25 @@ export const updateStatus = async (req, res) => {
         await application.save();
 
         if (status.toLowerCase() === "accepted") {
-            // Schedule Interview (10 days ahead, with 2-day gap if needed)
-            // const interviewDate = await scheduleInterview(email);
+            
+            const interviewDate = new Date();
+            interviewDate.setDate(interviewDate.getDate() + 10);
 
-            // // Save interview date in DB
-            // application.interviewDate = interviewDate;
-            // await application.save();
+            const job = await Job.findById(application.job);
+            if (!job) {
+                return res.status(404).json({ message: "Job not found.", success: false });
+            }
+            
+            const interview = new Interview({
+                userId: application.applicant,
+                jobId: application.job,
+                applicationId: application._id,
+                interviewDate,
+                company: job.company // Ensure 'company' is included
+            });
+            
+
+            await interview.save();
 
             await sendEmail(
                 email,

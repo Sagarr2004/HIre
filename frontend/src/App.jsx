@@ -15,8 +15,9 @@ import PostJob from './components/admin/PostJob'
 import Applicants from './components/admin/Applicants'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import Alerts from "./components/Alert"
-// import Dashboard from '../Resume-Builder/src/dashboard/index'
 import AluminiConnect from "../src/components/AluminiConnect"
+import RecruiterForm from './components/RecruiterForm'
+import CalenderComponent from "./components/CalenderComponent"
 
 
 const appRouter = createBrowserRouter([
@@ -31,6 +32,10 @@ const appRouter = createBrowserRouter([
   {
     path: '/signup',
     element: <Signup />
+  },
+  {
+    path: '/calender',
+    element: <CalenderComponent />
   },
   // {
   //   path: '/resume',
@@ -57,6 +62,10 @@ const appRouter = createBrowserRouter([
   {
     path: "/alumini",
     element: <AluminiConnect />
+  },
+  {
+    path: "/recruiters",
+    element: <RecruiterForm />
   },
   {
     path: "/jobs",

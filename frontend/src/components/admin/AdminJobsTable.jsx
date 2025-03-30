@@ -126,7 +126,7 @@ const AdminJobsTable = () => {
                       </div>
                     </PopoverContent>
                   </Popover>
-                </TableCell>
+                </TableCell>                                          
               </TableRow>
             ))}
           </TableBody>

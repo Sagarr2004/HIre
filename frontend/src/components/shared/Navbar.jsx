@@ -205,17 +205,15 @@ const Navbar = () => {
                   <Link to="/jobs">Jobs</Link>
                 </motion.li>
                 <motion.li whileHover={{ scale: 1.1 }}>
+                  <Link to="/recruiters">Form</Link>
+                </motion.li>
+                <motion.li whileHover={{ scale: 1.1 }}>
                   <Link to="/browse">Browse</Link>
                 </motion.li>
                 {/* ✅ Interview Scheduling button (opens modal) */}
+               
                 <motion.li whileHover={{ scale: 1.1 }}>
-                  <button
-                    onClick={() => setIsCalendarOpen(true)}
-                    className="flex items-center gap-1"
-                  >
-                    <CalendarDays className="w-5 h-5" />
-                     Scheduled Dates 
-                  </button>
+                  <Link to="/calender">Scheduled Interview</Link>
                 </motion.li>
                 <motion.li whileHover={{ scale: 1.1 }}>
                   <Link to="/alumini">Alumini</Link>

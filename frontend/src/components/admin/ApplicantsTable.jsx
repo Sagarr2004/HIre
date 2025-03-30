@@ -29,6 +29,7 @@ const ApplicantsTable = () => {
   const statusHandler = async (status, id, email) => {
     // console.log("called");
     try {
+      console.log("Status:",status);
       axios.defaults.withCredentials = true;
       const res = await axios.post(
         `${APPLICATION_API_END_POINT}/status/${id}/update`,

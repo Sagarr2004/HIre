@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
@@ -7,8 +8,8 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend requests
 
 # Configure Gemini API Key (Use Environment Variable)
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyAzNeFkTurlB0kWYyVDrRfJKRlO4zcvKpk")
-genai.configure(api_key="AIzaSyAzNeFkTurlB0kWYyVDrRfJKRlO4zcvKpk")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDhaiXx828ZD9Z_m6BrE0b_c76egmkJOPg")
+genai.configure(api_key="AIzaSyDhaiXx828ZD9Z_m6BrE0b_c76egmkJOPg")
 
 def analyze_resume(text):
     try:
@@ -18,7 +19,7 @@ def analyze_resume(text):
     except Exception as e:
         return f"Error: {str(e)}"
 
-@app.route("/analyze_resume", methods=["POST"])
+@app.route("/upload", methods=["POST"])
 def get_suggestions():
     try:
         data = request.json

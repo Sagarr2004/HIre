@@ -12,9 +12,18 @@ const Applicants = () => {
     const dispatch = useDispatch();
     const { applicants } = useSelector((store) => store.application) || { applicants: { applications: [] } };
     const [resumeLinks, setResumeLinks] = useState([]);
-    const [pdfFiles, setPdfFiles] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [mlResponse, setMlResponse] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [selected, setSelected] = useState("1");
+    const [isOpen, setIsOpen] = useState(false);
+    const [interviewers, setInterviewers] = useState([]);
+    const [error, setError] = useState(null);
+
+    const skills = [
+        "cloud infrastructure", "microservices architecture", "Google Cloud Platform (GCP)", "Azure",
+        "CI/CD pipelines", "cloud-native solutions", "cloud migration", "JavaScript",
+        "Google Cloud Armor", "containerization technologies"
+    ];
 
     useEffect(() => {
         const fetchAllApplicants = async () => {
@@ -25,101 +34,74 @@ const Applicants = () => {
                 console.error('Error fetching applicants:', error);
             }
         };
-        fetchAllApplicants();
-    }, [params.id, dispatch]);
 
-    const handleCollectResumes = async () => {
-        try {
-            const res = await axios.get(`${APPLICATION_API_END_POINT}/${params.id}/applicants/resume`, { withCredentials: true });
-
-            if (res.data.success && Array.isArray(res.data.resumes)) {
-                const downloadedFiles = [];
-                const resumeUrls = [];
-
-                for (const applicant of res.data.resumes) {
-                    if (applicant.resumeLink) {
-                        try {
-                            const response = await axios.get(applicant.resumeLink, { responseType: 'blob' });
-                            const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
-                            const objectUrl = URL.createObjectURL(pdfBlob);
-
-                            downloadedFiles.push(new File([pdfBlob], `${applicant.name}.pdf`, { type: 'application/pdf' }));
-                            resumeUrls.push({ name: applicant.name, url: objectUrl });
-                        } catch (err) {
-                            console.error(`Failed to download resume for ${applicant.name}:`, err);
+        const processResumes = async () => {
+            try {
+                const res = await axios.get(`${APPLICATION_API_END_POINT}/${params.id}/applicants/resume`, { withCredentials: true });
+                if (res.data.success && Array.isArray(res.data.resumes)) {
+                    const formData = new FormData();
+                    formData.append("job_description", "We are seeking a highly skilled Full-Stack Developer...");
+                    
+                    const resumeUrls = [];
+                    for (const applicant of res.data.resumes) {
+                        if (applicant.resumeLink) {
+                            try {
+                                const response = await axios.get(applicant.resumeLink, { responseType: 'blob' });
+                                const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+                                formData.append("files", new File([pdfBlob], `${applicant.name}.pdf`, { type: 'application/pdf' }));
+                                resumeUrls.push({ name: applicant.name, url: URL.createObjectURL(pdfBlob) });
+                            } catch (err) {
+                                console.error(`Failed to download resume for ${applicant.name}:`, err);
+                            }
                         }
                     }
+                    setResumeLinks(resumeUrls);
+                    
+                    const mlRes = await axios.post("http://localhost:5000/upload", formData, {
+                        headers: { "Content-Type": "multipart/form-data" }
+                    });
+                    setMlResponse(mlRes.data.ranked_resumes || []);
                 }
-
-                setPdfFiles(downloadedFiles);
-                setResumeLinks(resumeUrls);
-            } else {
-                console.warn("No resumes found in response.");
+            } catch (error) {
+                console.error("Error processing resumes:", error);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error("Error collecting resumes:", error);
-        }
-    };
+        };
 
-    const handleSendToModel = async () => {
-        if (pdfFiles.length === 0) {
-            console.warn("No resumes available to send. Collect resumes first.");
-            return;
-        }
-    
+        fetchAllApplicants();
+        processResumes();
+    }, [params.id, dispatch]);
+
+    const sendData = async (option) => {
         setLoading(true);
-        const formData = new FormData();
-        formData.append("job_description", "We are seeking a highly skilled Full-Stack Developer with expertise in C++, Python, JavaScript, React, HTML, and CSS to develop and optimize dynamic web applications. The ideal candidate will have experience working with MongoDB and SQL databases for efficient data management. You will be responsible for designing, developing, and maintaining scalable front-end and back-end solutions, ensuring seamless user experiences. Strong problem-solving abilities and a passion for clean, efficient code are essential.");
-        pdfFiles.forEach((pdf) => {
-            formData.append("files", pdf);
-        });
-    
+        setError(null);
+
+        const payload = {
+            option,
+            skills,
+        };
+
+        console.log("Payload:",payload);
+
         try {
-            const res = await axios.post("http://localhost:5000/upload", formData, {
-                headers: { "Content-Type": "multipart/form-data" }
+            const res = await axios.post("http://localhost:5001/process", payload, {
+                headers: { "Content-Type": "application/json" },
             });
-    
-            if (res.data && Array.isArray(res.data.ranked_resumes)) {
-                setMlResponse(res.data.ranked_resumes);
-            } else {
-                console.error("Unexpected ML response format:", res.data);
-                setMlResponse([]);
-            }
+            setInterviewers(res.data.interviewers || []);
         } catch (error) {
-            console.error("Error sending files to ML model:", error.response?.data || error.message);
-            setMlResponse([]);
+            setError("Failed to connect to the backend.");
         } finally {
             setLoading(false);
         }
     };
-    
+
     return (
         <div>
             <Navbar />
             <div className="max-w-7xl mt-[10px] mx-auto">
-                <div className="flex justify-between items-center mb-4">
-                    <h1 className="font-bold text-xl">
-                        Applicants {Array.isArray(applicants?.applications) ? applicants.applications.length : 0}
-                    </h1>
-
-                    <div>
-                        <button 
-                            onClick={handleCollectResumes} 
-                            className="bg-blue-500 text-white py-2 px-4 rounded mr-2"
-                        >
-                            Collect Resumes
-                        </button>
-                        <button 
-                            onClick={handleSendToModel} 
-                            className="bg-green-500 text-white py-2 px-4 rounded"
-                            disabled={pdfFiles.length === 0 || loading} 
-                        >
-                            {loading ? "Sending..." : "Send to Model"}
-                        </button>
-                    </div>
-
-                </div>
-
+                <h1 className="font-bold text-xl mb-4">Applicants {applicants?.applications?.length || 0}</h1>
+                {loading && <p className="text-blue-500">Processing resumes...</p>}
                 {resumeLinks.length > 0 && (
                     <div className="mt-4 p-4 border rounded-lg">
                         <h2 className="font-bold">Downloaded Resumes:</h2>
@@ -135,10 +117,9 @@ const Applicants = () => {
                         </ul>
                     </div>
                 )}
-
                 {mlResponse && (
                     <div className="mt-4 p-4 border rounded-lg bg-gray-100 mb-[40px]">
-                        <h2 className="font-bold">Ranking Scores:</h2>
+                        <h2 className="font-bold">Shortlisted Candidates:</h2>
                         <ul>
                             {mlResponse.map((applicant, index) => (
                                 <li key={index} className="py-2">
@@ -151,6 +132,46 @@ const Applicants = () => {
                 )}
 
                 <ApplicantsTable />
+
+                <div className="relative inline-block text-left mt-4">
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="block w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        {selected ? `Selected: ${selected}` : "Select no of experts in Panel"}
+                    </button>
+                    {isOpen && (
+                        <div className="absolute left-0 mt-2 w-44 bg-white border border-gray-300 rounded-lg shadow-lg z-50">
+                            {["1", "2", "3", "4", "5"].map((num) => (
+                                <div
+                                    key={num}
+                                    onClick={() => {
+                                        setSelected(num);
+                                        sendData(num);
+                                        setIsOpen(false);
+                                    }}
+                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                >
+                                    {num}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-4 mb-10">
+                    <h2 className="text-xl font-semibold mb-2">Ranked Interviewers</h2>
+                    {error && <p className="text-red-500">{error}</p>}
+                    {interviewers.length > 0 ? (
+                        <ul className="list-disc pl-5">
+                            {interviewers.map((name, index) => (
+                                <li key={index} className="text-gray-700">{index + 1}. {name}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        !loading && <p className="text-gray-500">No interviewers found.</p>
+                    )}
+                </div>
             </div>
         </div>
     );
